@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
+        <title>LVT Capitol</title>
+    </head>
+<body>
+   <h1>Data Extracting Tool</h1>
+    <form action="{{ url_for('handle_data') }}" method="post">
+        <input type="text" name="projectFilepath">
+        <input type="submit">
+    </form>
+</body>
+</html>
