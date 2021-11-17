@@ -1,74 +1,117 @@
 import gate_api
-
-import gate_api
 from gate_api.exceptions import ApiException, GateApiException
-
-# Defining the host is optional and defaults to https://api.gateio.ws/api/v4
-# See configuration.py for a list of all supported configuration parameters.
-configuration = gate_api.Configuration(
-    host = "https://api.gateio.ws/api/v4"
-)
+import csv
+import pytz
+from datetime import datetime
 
 
-api_client = gate_api.ApiClient(configuration)
-# Create an instance of the API class
-api_instance = gate_api.DeliveryApi(api_client)
-settle = 'usdt' # str | Settle currency
+GATE_API_URL = "https://api.gateio.ws/api/v4"
 
-gate_deposit_api = gate_api.WalletApi(api_client)
-currency = 'BTC' # str | Filter by currency. Return all currency records if not specified (optional)
-_from = 1602120000 # int | Time range beginning, default to 7 days before current time (optional)
-to = 1602123600 # int | Time range ending, default to current time (optional)
-limit = 100 # int | Maximum number of records to be returned in a single list (optional) (default to 100)
-offset = 0 # int | List offset, starting from 0 (optional) (default to 0)
-
-
-def gateIoApiCall(apikey, apisecret):
-    pass
-
+def gateIoApiCall(api_key, api_secret):
+    gate_io = GateIOApi(api_key, api_secret)
+    gate_io.get_spot_trades()
+    gate_io.get_withdrawals()
+    gate_io.get_deposits()
 
 
 class GateIOApi():
-    def __init__(self):
-        pass
+    def __init__(self, api_key, api_secret):
+        configuration = gate_api.Configuration(
+            host = GATE_API_URL,
+            key = api_key,
+            secret = api_secret
+        )
+        api_client = gate_api.ApiClient(configuration)
+        self.api_instance = gate_api.SpotApi(api_client)
+        self.wallet_api_instance = gate_api.WalletApi(api_client)
 
-    def retreive_deposit(self):
+
+    def get_spot_trades(self, currency_pair: str = 'BTC_USDT', limit: int = 100):
         try:
-            # Retrieve deposit records
-            import pdb;
-            pdb.set_trace()
-            api_response = gate_deposit_api.list_deposits(currency=currency, _from=_from, to=to, limit=limit, offset=offset)
-            print('++++++++++> deposits', api_response)
+            csv_header = ['Koinly Date', 'Pair', 'Side', 'Amount', 'Total', 'Fee Amount', 'Fee Currency', 'Order ID', 'Trade ID']
+
+            # returns list[Trade]
+            api_response = self.api_instance.list_trades(currency_pair=currency_pair, limit=limit)
+
+            with open('capital_spot_trades.csv', 'w', encoding='UTF8') as f:
+                writer = csv.DictWriter(f, fieldnames=csv_header)
+                writer.writeheader()
+                trades = ({
+                    #TODO: confirm if create_time is in seconds
+                    'Koinly Date': datetime.fromtimestamp(int(trade.create_time), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                    'Pair': trade.currency_pair,
+                    'Side': trade.side,
+                    #TODO: confirm number of decimal places
+                    'Amount': trade.amount,
+                    #TODO: confirm Total calculation
+                    'Total': float(trade.amount) * float(trade.price),
+                    'Fee Amount': trade.fee,
+                    'Fee Currency': trade.fee_currency,
+                    'Order ID': trade.order_id,
+                    'Trade ID': trade.id,
+                    } for trade in api_response)
+
+                writer.writerows(trades)
+
+        except GateApiException as ex:
+            print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
+        except ApiException as e:
+            print("Exception when calling SpotApi->list_trades: %s\n" % e)
+
+
+    def get_withdrawals(self, limit: int=100):
+        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'TxHash']
+
+        try:
+            # returns list[LedgerRecord]
+            api_response = self.wallet_api_instance.list_withdrawals(limit=limit)
+
+            with open('capital_withdrawals.csv', 'w', encoding='UTF8') as f:
+                writer = csv.DictWriter(f, fieldnames=csv_header)
+                writer.writeheader()
+                trades = ({
+                    #TODO: confirm if create_time is in seconds
+                    'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                    'Amount': trade.amount,
+                    'Currency': trade.currency,
+                    #TODO: confirm we're picking the right field
+                    'Label': trade.memo,
+                    'TxHash': trade.txid
+                    } for trade in api_response)
+
+                writer.writerows(trades)
+        except GateApiException as ex:
+            print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
+        except ApiException as e:
+            print("Exception when calling WalletApi->list_withdrawals: %s\n" % e)
+
+
+    def get_deposits(self, limit:int=100):
+        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'TxHash']
+
+        try:
+            # returns list[LedgerRecord]
+            api_response = self.wallet_api_instance.list_deposits(limit=limit)
+
+            with open('capital_deposits.csv', 'w', encoding='UTF8') as f:
+                writer = csv.DictWriter(f, fieldnames=csv_header)
+                writer.writeheader()
+                trades = ({
+                    #TODO: confirm if create_time is in seconds
+                    'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                    'Amount': trade.amount,
+                    'Currency': trade.currency,
+                    #TODO: confirm the field
+                    'Label': trade.memo,
+                    'TxHash': trade.txid
+                    } for trade in api_response)
+
+                writer.writerows(trades)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
             print("Exception when calling WalletApi->list_deposits: %s\n" % e)
 
-    def retreive_withdrawal(self):
-        api_client = gate_api.ApiClient(configuration)
-        # Create an instance of the API class
-        api_instance = gate_api.WalletApi(api_client)
-        currency = 'BTC' # str | Retrieve data of the specified currency (optional)
-        try:
-            # Retrieve withdrawal status
-            api_response = api_instance.list_withdraw_status(currency=currency)
-            print(api_response)
-        except GateApiException as ex:
-            print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
-        except ApiException as e:
-            print("Exception when calling WalletApi->list_withdraw_status: %s\n" % e)
 
-    def get_api_lists(self):
-        try:
-            # List all futures contracts
-            # api_response = api_instance.list_delivery_contracts(settle)
-            import pdb;
-            pdb.set_trace()
-            api_response = gate_deposit_api.list_deposits(currency=currency, _from=_from, to=to, limit=limit, offset=offset)
-            print('++++++++++> deposits', api_response)
-            # print('=========>',api_response)
-        except GateApiException as ex:
-            print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
-        except ApiException as e:
-            print("Exception when calling DeliveryApi->list_delivery_contracts: %s\n" % e)
+
 
