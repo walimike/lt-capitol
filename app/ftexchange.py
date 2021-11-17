@@ -22,9 +22,6 @@ class FtxClient:
         if self._action == 'wallet-deposits':
             self.get_wallet_deposits()
 
-    def login_user(self):
-        self._request('GET', path, params=params)
-
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._request('GET', path, params=params)
 

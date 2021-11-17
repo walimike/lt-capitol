@@ -16,5 +16,5 @@ UTC date / times.
 ### How to run app locally
 - clone app
 - create a virtualenv with python3
-- Activate virtualenv and run `pip install > requirements.txt`
+- Activate virtualenv and run `pip install -r requirements.txt`
 - Run command `python run.py`
