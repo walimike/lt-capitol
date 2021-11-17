@@ -12,3 +12,9 @@ d. Bit Global (formerly Bithumb)
 blockchain transaction hash, origin / destination wallet addresses for deposits / withdrawals,
 note if present/relevant, and transaction type ie Deposit/Reward/Fee) in CSV file format using
 UTC date / times.
+
+### How to run app locally
+- clone app
+- create a virtualenv with python3
+- Activate virtualenv and run `pip install -r requirements.txt`
+- Run command `python run.py`
