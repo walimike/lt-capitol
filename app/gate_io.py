@@ -1,9 +1,9 @@
 import gate_api
 from gate_api.exceptions import ApiException, GateApiException
-import csv
 import pytz
 from datetime import datetime
 
+from .csv_generator import generate_csv_file
 
 GATE_API_URL = "https://api.gateio.ws/api/v4"
 
@@ -32,27 +32,22 @@ class GateIOApi():
 
             # returns list[Trade]
             api_response = self.api_instance.list_trades(currency_pair=currency_pair, limit=limit)
-
-            with open('capital_spot_trades.csv', 'w', encoding='UTF8') as f:
-                writer = csv.DictWriter(f, fieldnames=csv_header)
-                writer.writeheader()
-                trades = ({
-                    #TODO: confirm if create_time is in seconds
-                    'Koinly Date': datetime.fromtimestamp(int(trade.create_time), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
-                    'Pair': trade.currency_pair,
-                    'Side': trade.side,
-                    #TODO: confirm number of decimal places
-                    'Amount': trade.amount,
-                    #TODO: confirm Total calculation
-                    'Total': float(trade.amount) * float(trade.price),
-                    'Fee Amount': trade.fee,
-                    'Fee Currency': trade.fee_currency,
-                    'Order ID': trade.order_id,
-                    'Trade ID': trade.id,
-                    } for trade in api_response)
-
-                writer.writerows(trades)
-
+    
+            trades = ({
+                #TODO: confirm if create_time is in seconds
+                'Koinly Date': datetime.fromtimestamp(int(trade.create_time), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                'Pair': trade.currency_pair,
+                'Side': trade.side,
+                #TODO: confirm number of decimal places
+                'Amount': trade.amount,
+                #TODO: confirm Total calculation
+                'Total': float(trade.amount) * float(trade.price),
+                'Fee Amount': trade.fee,
+                'Fee Currency': trade.fee_currency,
+                'Order ID': trade.order_id,
+                'Trade ID': trade.id,
+                } for trade in api_response)
+            generate_csv_file('capital_spot_trades', trades, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
@@ -64,22 +59,17 @@ class GateIOApi():
 
         try:
             # returns list[LedgerRecord]
-            api_response = self.wallet_api_instance.list_withdrawals(limit=limit)
-
-            with open('capital_withdrawals.csv', 'w', encoding='UTF8') as f:
-                writer = csv.DictWriter(f, fieldnames=csv_header)
-                writer.writeheader()
-                trades = ({
-                    #TODO: confirm if create_time is in seconds
-                    'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
-                    'Amount': trade.amount,
-                    'Currency': trade.currency,
-                    #TODO: confirm we're picking the right field
-                    'Label': trade.memo,
-                    'TxHash': trade.txid
-                    } for trade in api_response)
-
-                writer.writerows(trades)
+            api_response = self.wallet_api_instance.list_withdrawals(limit=limit)  
+            trades = ({
+                #TODO: confirm if create_time is in seconds
+                'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                'Amount': trade.amount,
+                'Currency': trade.currency,
+                #TODO: confirm we're picking the right field
+                'Label': trade.memo,
+                'TxHash': trade.txid
+                } for trade in api_response)
+            generate_csv_file('capital_withdrawals', trades, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
@@ -91,22 +81,17 @@ class GateIOApi():
 
         try:
             # returns list[LedgerRecord]
-            api_response = self.wallet_api_instance.list_deposits(limit=limit)
-
-            with open('capital_deposits.csv', 'w', encoding='UTF8') as f:
-                writer = csv.DictWriter(f, fieldnames=csv_header)
-                writer.writeheader()
-                trades = ({
-                    #TODO: confirm if create_time is in seconds
-                    'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
-                    'Amount': trade.amount,
-                    'Currency': trade.currency,
-                    #TODO: confirm the field
-                    'Label': trade.memo,
-                    'TxHash': trade.txid
-                    } for trade in api_response)
-
-                writer.writerows(trades)
+            api_response = self.wallet_api_instance.list_deposits(limit=limit)     
+            trades = ({
+                #TODO: confirm if create_time is in seconds
+                'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                'Amount': trade.amount,
+                'Currency': trade.currency,
+                #TODO: confirm the field
+                'Label': trade.memo,
+                'TxHash': trade.txid
+                } for trade in api_response)
+            generate_csv_file('capital_deposits',trades, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
