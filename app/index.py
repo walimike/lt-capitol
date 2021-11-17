@@ -3,7 +3,7 @@ from flask import  render_template, request
 
 from .ascendex import ascendexApiCall
 from .bithumb import bithumbApiCall
-from .ftexchange import ftexchangeApiCall
+from .ftexchange import FtxClient
 from .gate_io import gateIoApiCall
 
 def handle_post_request(trade_api, apikey, apisecret):
@@ -12,7 +12,10 @@ def handle_post_request(trade_api, apikey, apisecret):
     elif trade_api == 'ascendex':
         ascendexApiCall(apikey, apisecret)
     elif trade_api == 'ftxapi':
-        ftexchangeApiCall(apikey, apisecret)
+        action = 'wallet-deposits'
+        print('bbbbbbrrrrrrrr')
+        ftx_api = FtxClient(apikey, apisecret, None, action)
+        ftx_api.make_request()
     elif trade_api == 'bithumb':
         bithumbApiCall(apikey, apisecret)
     else:
@@ -29,6 +32,3 @@ def handle_data():
     apisecret=request.form['apisecret']
     handle_post_request(trade_api, apikey, apisecret)
     return render_template('index.html')
-    #trade api options => gateio, ascendex, ftxapi, bithumb
-
-
