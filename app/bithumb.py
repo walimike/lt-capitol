@@ -1,2 +1,2 @@
-def bithumbApiCall(apikey, apisecret):
+def bithumbApiCall(input_dict):
     pass

@@ -10,12 +10,15 @@ from ciso8601 import parse_datetime
 class FtxClient:
     _ENDPOINT = 'https://ftx.com/api/'
 
-    def __init__(self, api_key=None, api_secret=None, subaccount_name=None, action=None) -> None:
+    def __init__(self, input_dict) -> None:
         self._session = Session()
-        self._api_key = api_key
-        self._api_secret = api_secret
-        self._subaccount_name = subaccount_name
-        self._action = action
+        self._api_key = input_dict.get('apikey')
+        self._api_secret = input_dict.get('apisecret')
+        self._subaccount_name = input_dict.get('subaccount')
+        self._action = input_dict.get('apiaction')
+        self.start_date = input_dict.get('start_date')
+        self.end_date = input_dict.get('end_date')
+        self.make_request()
 
     def make_request(self):
         print('making request', self._action == 'wallet-deposits')
