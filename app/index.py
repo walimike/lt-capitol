@@ -36,12 +36,11 @@ def handle_data():
     from .csv_generator import csv_file
     if csv_file:
         file = open(csv_file)
+        content = f'attachment; filename={csv_file}'
         return Response(
-            stream_with_context(file),
-            mimetype='text/csv', 
-            headers={"Content-disposition":
-                    f'"attachment; filename={csv_file}"'}
-        )
+            file,
+            mimetype="text/csv",
+            headers={"Content-disposition": content})
     else:
         flash('An error occured with the data you provided')
     return render_template('index.html')
