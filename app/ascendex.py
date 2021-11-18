@@ -1,2 +1,2 @@
-def ascendexApiCall(apikey, apisecret):
+def ascendexApiCall(input_dict):
     pass

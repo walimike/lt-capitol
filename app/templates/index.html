@@ -5,6 +5,15 @@
         <link rel="stylesheet" href="{{ url_for('static', filename= 'css/style.css') }}">
         <title>LVT Capitol</title>
     </head>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul class=flashes>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
     <body class="app-body">
         <h1>LVT Capitol</h1>
         <h2>Data Extraction Tool</h2>
@@ -23,6 +32,19 @@
             <option value="ftxapi">FTX API</option>
             <option value="bithumb">Bithumb/ Bit Global</option>
             </select>
+
+            <label for="apiaction">Filter by</label>
+            <select id="apiaction" name="apiaction">
+            <option value="deposits">Deposits</option>
+            <option value="spottrades">Spot trades</option>
+            <option value="withdrawals">Withdrawals</option>
+            </select>
+
+            <label for="datefrom">From</label>
+            <input type="datetime-local" id="date-from" name="datefrom">
+
+            <label for="dateto">To</label>
+            <input type="datetime-local" id="date-to" name="dateto">
         
             <input type="submit" value="Generate CSV">
         </form>

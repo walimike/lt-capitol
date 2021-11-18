@@ -7,24 +7,31 @@ from .csv_generator import generate_csv_file
 
 GATE_API_URL = "https://api.gateio.ws/api/v4"
 
-def gateIoApiCall(api_key, api_secret):
-    gate_io = GateIOApi(api_key, api_secret)
-    gate_io.get_spot_trades()
-    gate_io.get_withdrawals()
-    gate_io.get_deposits()
-
 
 class GateIOApi():
-    def __init__(self, api_key, api_secret):
+    def __init__(self, input_dict):
         configuration = gate_api.Configuration(
             host = GATE_API_URL,
-            key = api_key,
-            secret = api_secret
+            key = input_dict.get('apikey'),
+            secret = input_dict.get('apisecret')
         )
         api_client = gate_api.ApiClient(configuration)
         self.api_instance = gate_api.SpotApi(api_client)
         self.wallet_api_instance = gate_api.WalletApi(api_client)
+        self.api_action = input_dict.get('apiaction')
+        self.start_date = input_dict.get('start_date')
+        self.end_date = input_dict.get('end_date')
+        self.initiate_request()
 
+    def initiate_request(self):
+        if self.api_action == 'deposits':
+            self.get_deposits()
+        elif self.api_action == 'spottrades':
+            self.get_spot_trades()
+        elif self.api_action == 'withdrawals':
+            self.get_withdrawals()
+        else:
+            pass
 
     def get_spot_trades(self, currency_pair: str = 'BTC_USDT', limit: int = 100):
         try:
