@@ -1,8 +1,8 @@
 from app import app
-from flask import  render_template, request, Response, stream_with_context, flash
+from flask import  render_template, request, Response, flash, redirect
 
 from .ascendex import ascendexApiCall
-from .bithumb import bithumbApiCall
+from .bithumb import BithumbGlobalRestAPI
 from .ftexchange import FtxClient
 from .gate_io import GateIOApi
 
@@ -15,9 +15,9 @@ def handle_post_request(**kwargs):
         elif kwargs.get('trade_api')== 'ftxapi':
             FtxClient(kwargs)
         elif kwargs.get('trade_api') == 'bithumb':
-            bithumbApiCall(kwargs)
-    except:
-        pass
+            BithumbGlobalRestAPI(kwargs)
+    except Exception as e:
+        flash(e.__str__())
 
 @app.route('/')
 def index():
