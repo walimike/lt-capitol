@@ -90,7 +90,7 @@ class BithumbGlobalRestAPI:
             # withdrawal needs proper address
             self.withdraw('BTC', '', 5)
         else:
-            pass
+            raise Exception('The filter key provided is not available for this api')
 
     @property
     def session(self):
@@ -128,10 +128,8 @@ class BithumbGlobalRestAPI:
         }
         data.update(parms)
         data['signature'] = self.__secret.sign(data)
-        print('the data',data)
         response = self.session.post(url=MY_TRADES_URL, json=data, timeout=15)
         response = load_json(response.text)
-        print('-----trades------------', response)
 
     def get_deposits(self):
         parms = {
