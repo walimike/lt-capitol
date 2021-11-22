@@ -81,22 +81,13 @@ class GateIOApi():
         deposits_and_withdrawals.extend(list(self.get_withdrawals()))
         deposits_and_withdrawals.extend(list(self.get_deposits()))
 
-        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'TxHash']
+        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'Description', 'TxHash']
         generate_csv_file('capital_deposits_and_withdrawals', deposits_and_withdrawals, csv_header)
 
     def get_withdrawals(self):
         try:
             # returns list[LedgerRecord]
-            withdrawals = []
-            current_page = 1
-            last_page_reached = False
-            while last_page_reached == False:
-                api_response = self.wallet_api_instance.list_withdrawals(limit=1000, page=current_page)
-                if len(api_response) > 0:
-                    withdrawals.extend(api_response)
-                    current_page+=1
-                else:
-                    last_page_reached = True
+            api_response = self.wallet_api_instance.list_withdrawals(limit=1000)
             my_withdrawals = ({
                 #TODO: confirm if create_time is in seconds
                 'Koinly Date': datetime.fromtimestamp(int(withdraw.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
@@ -104,8 +95,9 @@ class GateIOApi():
                 'Currency': withdraw.currency,
                 #TODO: confirm we're picking the right field
                 'Label': withdraw.memo,
+                'Description': withdraw.memo,
                 'TxHash': withdraw.txid
-                } for withdraw in withdrawals)
+                } for withdraw in api_response)
             return my_withdrawals
             # generate_csv_file('capital_withdrawals', withdrawls, csv_header)
         except GateApiException as ex:
@@ -116,26 +108,17 @@ class GateIOApi():
 
     def get_deposits(self):
         try:
-            deposits = []
-            current_page = 1
-            last_page_reached = False
-            while last_page_reached == False:
-                # returns list[LedgerRecord]
-                api_response = self.wallet_api_instance.list_deposits(limit=1000, page=current_page)
-                if len(api_response) > 0:
-                    deposits.extend(api_response)
-                    current_page+=1
-                else:
-                    last_page_reached = True
+            api_response = self.wallet_api_instance.list_deposits(limit=1000)
             my_deposits = ({
                 #TODO: confirm if create_time is in seconds
                 'Koinly Date': datetime.fromtimestamp(int(deposit.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
                 'Amount': deposit.amount,
                 'Currency': deposit.currency,
                 #TODO: confirm the field
-                'Label': deposit.memo,
+                'Label': '',
+                'Description': deposit.memo,
                 'TxHash': deposit.txid
-                } for deposit in deposits)
+                } for deposit in api_response)
             return my_deposits
             # generate_csv_file('capital_deposits',my_deposits, csv_header)
         except GateApiException as ex:
