@@ -14,16 +14,38 @@ class FtxClient:
         self._session = Session()
         self._api_key = input_dict.get('apikey')
         self._api_secret = input_dict.get('apisecret')
-        self._subaccount_name = input_dict.get('subaccount')
+        self._subaccount_name = None
         self._action = input_dict.get('apiaction')
         self.start_date = input_dict.get('start_date')
         self.end_date = input_dict.get('end_date')
         self.make_request()
 
     def make_request(self):
-        print('making request', self._action == 'wallet-deposits')
-        if self._action == 'wallet-deposits':
-            self.get_wallet_deposits()
+        x = self.get_my_lending_history()
+        print('xxxxxxxxxxxxxxxxxxxxxxxx', x)
+        # sub_accounts = self.get_user_subaccounts()
+        # for sub_account in sub_accounts:
+        #     self._subaccount_name = sub_account.get('nickname')
+        # if self._action == 'deposits':
+        #     self.get_wallet_deposits(1609448400.0, 1637490612.091546)
+        # elif self._action == 'spottrades':
+        #     self.get_spot_trades()
+        #     elif self._action == 'withdrawals':
+        #         self.get_withdrawals()
+        #     else:
+        #         pass
+
+    def get_spot_trades(self):
+        pass
+
+    def get_my_lending_history(self):
+        return self._get('spot_margin/history')
+
+    def get_withdrawals(self):
+        pass
+
+    def get_user_subaccounts(self):
+        return self._get('subaccounts')
 
     def _get(self, path: str, params: Optional[Dict[str, Any]] = None) -> Any:
         return self._request('GET', path, params=params)
@@ -50,6 +72,7 @@ class FtxClient:
         request.headers['FTX-KEY'] = self._api_key
         request.headers['FTX-SIGN'] = signature
         request.headers['FTX-TS'] = str(ts)
+        print('signing in', self._subaccount_name, signature, signature_payload)
         if self._subaccount_name:
             request.headers['FTX-SUBACCOUNT'] = urllib.parse.quote(self._subaccount_name)
 
@@ -191,19 +214,20 @@ class FtxClient:
     def get_wallet_deposits(self, start_time: float = None, end_time: float = None) -> List:
         limit = 100
         results = []
-        while True:
-            response = self._get(f'/wallet/deposits', {
-                'end_time': end_time,
-                'start_time': start_time,
-            })
-            # deduped_trades = [r for r in response if r['id'] not in ids]
-            # results.extend(deduped_trades)
-            # ids |= {r['id'] for r in deduped_trades}
-            print(f'==========> Adding {len(response)} trades with end time {end_time} <=============')
-            if len(response) == 0:
-                break
-            end_time = min(parse_datetime(t['time']) for t in response).timestamp()
-            if len(response) < limit:
-                break
-        return results
-        
+        response = self._get(f'/wallet/deposits')
+        print('response -------------------->', response)
+        # while True:
+        #     response = self._get(f'/wallet/deposits', {
+        #         'end_time': end_time,
+        #         'start_time': start_time
+        #     })
+        #     # deduped_trades = [r for r in response if r['id'] not in ids]
+        #     # results.extend(deduped_trades)
+        #     # ids |= {r['id'] for r in deduped_trades}
+        #     print(f'==========> Adding {len(response)} trades with end time {end_time} <=============')
+        #     if len(response) == 0:
+        #         break
+        #     end_time = min(parse_datetime(t['time']) for t in response).timestamp()
+        #     if len(response) < limit:
+        #         break
+        # return results
