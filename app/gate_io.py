@@ -24,22 +24,33 @@ class GateIOApi():
         self.initiate_request()
 
     def initiate_request(self):
+        #TODO one action for deposits and withdraws
         if self.api_action == 'deposits':
-            self.get_deposits()
+            self.get_deposits_and_withdrawals()
         elif self.api_action == 'spottrades':
             self.get_spot_trades()
         elif self.api_action == 'withdrawals':
-            self.get_withdrawals()
+            self.get_deposits_and_withdrawals()
         else:
             pass
 
-    def get_spot_trades(self, currency_pair: str = 'BTC_USDT', limit: int = 100):
+    def get_spot_trades(self):
         try:
             csv_header = ['Koinly Date', 'Pair', 'Side', 'Amount', 'Total', 'Fee Amount', 'Fee Currency', 'Order ID', 'Trade ID']
 
-            # returns list[Trade]
-            api_response = self.api_instance.list_trades(currency_pair=currency_pair, limit=limit)
-    
+            my_trades = []
+            for currency_pair in list(self.get_currency_pairs()):
+                # returns list[Trade]
+                current_page = 1
+                last_page_reached = False
+                while last_page_reached == False:
+                    api_response = self.api_instance.list_my_trades(currency_pair=currency_pair, limit=1000, page=current_page)
+                    if len(api_response) > 0:
+                        my_trades.extend(api_response)
+                        current_page+=1
+                    else:
+                        last_page_reached = True
+
             trades = ({
                 #TODO: confirm if create_time is in seconds
                 'Koinly Date': datetime.fromtimestamp(int(trade.create_time), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
@@ -53,7 +64,7 @@ class GateIOApi():
                 'Fee Currency': trade.fee_currency,
                 'Order ID': trade.order_id,
                 'Trade ID': trade.id,
-                } for trade in api_response)
+                } for trade in my_trades)
             generate_csv_file('capital_spot_trades', trades, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
@@ -61,49 +72,83 @@ class GateIOApi():
             print("Exception when calling SpotApi->list_trades: %s\n" % e)
 
 
-    def get_withdrawals(self, limit: int=100):
-        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'TxHash']
+    def get_deposits_and_withdrawals(self):
+        deposits_and_withdrawals = []
+        deposits_and_withdrawals.extend(list(self.get_withdrawals()))
+        deposits_and_withdrawals.extend(list(self.get_deposits()))
 
+        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'TxHash']
+        generate_csv_file('capital_deposits_and_withdrawals', deposits_and_withdrawals, csv_header)
+
+    def get_withdrawals(self):
         try:
             # returns list[LedgerRecord]
-            api_response = self.wallet_api_instance.list_withdrawals(limit=limit)  
-            trades = ({
+            withdrawals = []
+            current_page = 1
+            last_page_reached = False
+            while last_page_reached == False:
+                api_response = self.wallet_api_instance.list_withdrawals(limit=1000, page=current_page)
+                if len(api_response) > 0:
+                    withdrawals.extend(api_response)
+                    current_page+=1
+                else:
+                    last_page_reached = True
+            my_withdrawals = ({
                 #TODO: confirm if create_time is in seconds
-                'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
-                'Amount': trade.amount,
-                'Currency': trade.currency,
+                'Koinly Date': datetime.fromtimestamp(int(withdraw.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                'Amount': withdraw.amount,
+                'Currency': withdraw.currency,
                 #TODO: confirm we're picking the right field
-                'Label': trade.memo,
-                'TxHash': trade.txid
-                } for trade in api_response)
-            generate_csv_file('capital_withdrawals', trades, csv_header)
+                'Label': withdraw.memo,
+                'TxHash': withdraw.txid
+                } for withdraw in withdrawals)
+            return my_withdrawals
+            # generate_csv_file('capital_withdrawals', withdrawls, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
             print("Exception when calling WalletApi->list_withdrawals: %s\n" % e)
 
 
-    def get_deposits(self, limit:int=100):
-        csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'TxHash']
-
+    def get_deposits(self):
         try:
-            # returns list[LedgerRecord]
-            api_response = self.wallet_api_instance.list_deposits(limit=limit)     
-            trades = ({
+            deposits = []
+            current_page = 1
+            last_page_reached = False
+            while last_page_reached == False:
+                # returns list[LedgerRecord]
+                api_response = self.wallet_api_instance.list_deposits(limit=1000, page=current_page)
+                if len(api_response) > 0:
+                    deposits.extend(api_response)
+                    current_page+=1
+                else:
+                    last_page_reached = True
+            my_deposits = ({
                 #TODO: confirm if create_time is in seconds
-                'Koinly Date': datetime.fromtimestamp(int(trade.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
-                'Amount': trade.amount,
-                'Currency': trade.currency,
+                'Koinly Date': datetime.fromtimestamp(int(deposit.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
+                'Amount': deposit.amount,
+                'Currency': deposit.currency,
                 #TODO: confirm the field
-                'Label': trade.memo,
-                'TxHash': trade.txid
-                } for trade in api_response)
-            generate_csv_file('capital_deposits',trades, csv_header)
+                'Label': deposit.memo,
+                'TxHash': deposit.txid
+                } for deposit in deposits)
+            return my_deposits
+            # generate_csv_file('capital_deposits',my_deposits, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
             print("Exception when calling WalletApi->list_deposits: %s\n" % e)
 
+
+    def get_currency_pairs(self):
+        try:
+            # List all currency pairs supported
+            api_response = self.api_instance.list_currency_pairs()
+            return (currency_pair.id for currency_pair in api_response)
+        except GateApiException as ex:
+            print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
+        except ApiException as e:
+            print("Exception when calling SpotApi->list_currency_pairs: %s\n" % e)
 
 
 
