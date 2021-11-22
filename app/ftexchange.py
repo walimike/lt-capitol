@@ -6,6 +6,8 @@ from requests import Request, Session, Response
 import hmac
 from ciso8601 import parse_datetime
 
+from .csv_generator import create_timestamp
+
 
 class FtxClient:
     _ENDPOINT = 'https://ftx.com/api/'
@@ -16,8 +18,12 @@ class FtxClient:
         self._api_secret = input_dict.get('apisecret')
         self._subaccount_name = None
         self._action = input_dict.get('apiaction')
-        self.start_date = input_dict.get('start_date')
-        self.end_date = input_dict.get('end_date')
+        self.start_date = create_timestamp(
+                            input_dict.get('start_date')
+                        )
+        self.end_date = create_timestamp(
+                            input_dict.get('end_date')
+                        )
         self.make_request()
 
     def make_request(self):

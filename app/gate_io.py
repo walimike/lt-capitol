@@ -3,7 +3,7 @@ from gate_api.exceptions import ApiException, GateApiException
 import pytz
 from datetime import datetime
 
-from .csv_generator import generate_csv_file
+from .csv_generator import generate_csv_file, create_timestamp
 
 GATE_API_URL = "https://api.gateio.ws/api/v4"
 
@@ -19,8 +19,12 @@ class GateIOApi():
         self.api_instance = gate_api.SpotApi(api_client)
         self.wallet_api_instance = gate_api.WalletApi(api_client)
         self.api_action = input_dict.get('apiaction')
-        self.start_date = input_dict.get('start_date')
-        self.end_date = input_dict.get('end_date')
+        self.start_date = create_timestamp(
+                            input_dict.get('start_date')
+                        )
+        self.end_date = create_timestamp(
+                            input_dict.get('end_date')
+                        )
         self.initiate_request()
 
     def initiate_request(self):
