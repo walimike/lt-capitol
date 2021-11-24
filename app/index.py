@@ -1,7 +1,7 @@
 from app import app
 from flask import  render_template, request, Response, flash, redirect
 
-from .ascendex import ascendexApiCall
+from .ascendex import AscendexApi
 from .bithumb import BithumbGlobalRestAPI
 from .ftexchange import FtxClient
 from .gate_io import GateIOApi
@@ -11,7 +11,7 @@ def handle_post_request(**kwargs):
         if kwargs.get('trade_api') == 'gateio':
             GateIOApi(kwargs)
         elif kwargs.get('trade_api')== 'ascendex':
-            ascendexApiCall(kwargs)
+            AscendexApi(kwargs)
         elif kwargs.get('trade_api')== 'ftxapi':
             FtxClient(kwargs)
         elif kwargs.get('trade_api') == 'bithumb':
