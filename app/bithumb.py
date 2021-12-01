@@ -6,7 +6,7 @@ import requests
 from .csv_generator import create_timestamp
 
 
-URL_WITHDRAW= 'https://global-openapi.bithumb.pro/openapi/v1/withdraw'
+URL_WITHDRAW= 'https://global-openapi.bithumb.pro/openapi/v1/wallet/withdrawHistory'
 URL         = 'https://global-openapi.bithumb.pro/openapi/v1/spot/'
 DEPTH_URL   = 'https://global-openapi.bithumb.pro/market/data/orderBook?symbol='
 CONFIG_URL  = 'https://global-openapi.bithumb.pro/market/data/config'
@@ -149,6 +149,8 @@ class BithumbGlobalRestAPI:
         print('-------deposits----------', response)
 
     def withdraw(self, cointype, address, volume, mark='AUTO', memo=None):
+        if not self.start_date :
+            raise BithumbGlobalError(400, 'Start date is required')
         parms = {
             'coinType': cointype,
             'address': address,
@@ -164,6 +166,7 @@ class BithumbGlobalRestAPI:
              'bizCode': action,
              'msgNo': ts,
              'timestamp': ts,
+             'start': self.start_date
         }
         data.update(parms)
 
