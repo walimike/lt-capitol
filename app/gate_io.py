@@ -7,7 +7,7 @@ import time
 import hashlib
 import hmac
 
-from .csv_generator import generate_csv_file
+from .csv_generator import generate_csv_file, create_timestamp
 
 GATE_API_URL = "https://api.gateio.ws/api/v4"
 
@@ -24,10 +24,14 @@ class GateIOApi():
         self.api_instance = gate_api.SpotApi(api_client)
         self.wallet_api_instance = gate_api.WalletApi(api_client)
         self.api_action = input_dict.get('apiaction')
-        self.start_date = input_dict.get('start_date')
-        self.end_date = input_dict.get('end_date')
         self.key = input_dict.get('apikey')
         self.secret = input_dict.get('apisecret')
+        self.start_date = create_timestamp(
+                            input_dict.get('start_date')
+                        )
+        self.end_date = create_timestamp(
+                            input_dict.get('end_date')
+                        )
         self.initiate_request()
 
     def initiate_request(self):
@@ -59,7 +63,7 @@ class GateIOApi():
             headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
             url = '/spot/my_trades'
-            query_param = 'limit=1000'
+            query_param = f'limit=1000&_from={self.start_date}&to={self.end_date}'
             sign_headers = self.gen_sign('GET', prefix + url, query_param)
             headers.update(sign_headers)
             r = requests.request('GET', host + prefix + url + "?" + query_param, headers=headers)
