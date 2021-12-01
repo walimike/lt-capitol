@@ -6,6 +6,8 @@ from requests import Request, Session, Response
 import hmac
 from ciso8601 import parse_datetime
 
+from .csv_generator import create_timestamp
+
 
 class FtxClient:
     _ENDPOINT = 'https://ftx.com/api/'
@@ -16,27 +18,35 @@ class FtxClient:
         self._api_secret = input_dict.get('apisecret')
         self._subaccount_name = None
         self._action = input_dict.get('apiaction')
-        self.start_date = input_dict.get('start_date')
-        self.end_date = input_dict.get('end_date')
+        self.start_date = create_timestamp(
+                            input_dict.get('start_date')
+                        )
+        self.end_date = create_timestamp(
+                            input_dict.get('end_date')
+                        )
         self.make_request()
 
     def make_request(self):
-        x = self.get_my_lending_history()
-        print('xxxxxxxxxxxxxxxxxxxxxxxx', x)
-        # sub_accounts = self.get_user_subaccounts()
-        # for sub_account in sub_accounts:
-        #     self._subaccount_name = sub_account.get('nickname')
-        # if self._action == 'deposits':
-        #     self.get_wallet_deposits(1609448400.0, 1637490612.091546)
-        # elif self._action == 'spottrades':
-        #     self.get_spot_trades()
-        #     elif self._action == 'withdrawals':
-        #         self.get_withdrawals()
-        #     else:
-        #         pass
+        sub_accounts = self.get_user_subaccounts()
+        for sub_account in sub_accounts:
+            self._subaccount_name = sub_account.get('nickname')
+            if self._action == 'deposits':
+                self.get_wallet_deposits()
+            elif self._action == 'spottrades':
+                print('get trades', self.get_spot_trades())
+            elif self._action == 'withdrawals':
+                self.get_withdrawals()
+            elif self._action == 'lending':
+                self.get_my_lending_history()
+            elif self._action == 'pnl':
+                self.get_my_lending_history()
+            elif self._action == 'referal':
+                self.get_my_lending_history()
+            else:
+                raise Exception('The filter key provided is not available for this api')
 
     def get_spot_trades(self):
-        pass
+        return self._get(f'spot/trades')
 
     def get_my_lending_history(self):
         return self._get('spot_margin/history')
@@ -96,7 +106,7 @@ class FtxClient:
     def get_orderbook(self, market: str, depth: int = None) -> dict:
         return self._get(f'markets/{market}/orderbook', {'depth': depth})
 
-    def get_trades(self, market: str) -> dict:
+    def get_trades(self, market: str = 'BTC/USD') -> dict:
         return self._get(f'markets/{market}/trades')
 
     def get_account_info(self) -> dict:
@@ -211,7 +221,7 @@ class FtxClient:
                 break
         return results
 
-    def get_wallet_deposits(self, start_time: float = None, end_time: float = None) -> List:
+    def get_wallet_deposits(self) -> List:
         limit = 100
         results = []
         response = self._get(f'/wallet/deposits')

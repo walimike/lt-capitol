@@ -3,6 +3,8 @@ from datetime import datetime as DateTime
 from hmac import digest
 import requests
 
+from .csv_generator import create_timestamp
+
 
 URL_WITHDRAW= 'https://global-openapi.bithumb.pro/openapi/v1/withdraw'
 URL         = 'https://global-openapi.bithumb.pro/openapi/v1/spot/'
@@ -65,8 +67,12 @@ class Secret:
 class BithumbGlobalRestAPI:
     def __init__(self, input_dict):
         self._action = input_dict.get('apiaction')
-        self.start_date = input_dict.get('start_date')
-        self.end_date = input_dict.get('end_date')
+        self.start_date = create_timestamp(
+                            input_dict.get('start_date')
+                        )
+        self.end_date = create_timestamp(
+                            input_dict.get('end_date')
+                        )
         self.__secret = Secret(
             'd383d7cb0098e85d5a72198663232074',
             '2e83ab567521a2ce00db3c9f013d3f1aed56739aba6d1ba262caaeaaaf5c490e'
@@ -84,7 +90,7 @@ class BithumbGlobalRestAPI:
             # withdrawal needs proper address
             self.withdraw('BTC', '', 5)
         else:
-            pass
+            raise Exception('The filter key provided is not available for this api')
 
     @property
     def session(self):
@@ -122,10 +128,8 @@ class BithumbGlobalRestAPI:
         }
         data.update(parms)
         data['signature'] = self.__secret.sign(data)
-        print('the data',data)
         response = self.session.post(url=MY_TRADES_URL, json=data, timeout=15)
         response = load_json(response.text)
-        print('-----trades------------', response)
 
     def get_deposits(self):
         parms = {
