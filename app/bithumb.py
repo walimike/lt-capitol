@@ -3,7 +3,7 @@ from datetime import datetime as DateTime
 from hmac import digest
 import requests
 
-from .csv_generator import create_timestamp
+from .csv_generator import create_timestamp, generate_csv_file
 
 
 URL_WITHDRAW = 'https://global-openapi.bithumb.pro/openapi/v1/wallet/withdrawHistory'
@@ -130,6 +130,11 @@ class BithumbGlobalRestAPI:
         data['signature'] = self.__secret.sign(data)
         response = self.session.post(url=MY_TRADES_URL, json=data, timeout=15)
         response = load_json(response.text)
+        if not response.get('data'):
+            raise BithumbGlobalError(response['code'], response['msg'])
+        else:
+            #generate csv here
+            data = response['data']
 
     def get_deposits(self):
         parms = {
@@ -145,6 +150,12 @@ class BithumbGlobalRestAPI:
         data['signature'] = self.__secret.sign(data)
         response = self.session.post(url=DEPOSITS_URL, json=data, timeout=15)
         response = load_json(response.text)
+        if not response.get('data'):
+            raise BithumbGlobalError(response['code'], response['msg'])
+        else:
+            #generate csv here
+            data = response['data']
+
 
     def withdraw(self, cointype, address, volume, mark='AUTO', memo=None):
         if not self.start_date :
@@ -171,6 +182,7 @@ class BithumbGlobalRestAPI:
         data['signature'] = self.__secret.sign(data)
         response = self.session.post(url=URL_WITHDRAW, json=data, timeout=15)
         response = load_json(response.text)
+        print('withdrawal data', response)
 
         if response['code'] != '0':
            raise BithumbGlobalError(response['code'], response['msg'])
