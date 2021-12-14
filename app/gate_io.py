@@ -6,6 +6,7 @@ import requests
 import time
 import hashlib
 import hmac
+import math
 
 from .csv_generator import generate_csv_file, create_timestamp
 
@@ -63,13 +64,14 @@ class GateIOApi():
             headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
 
             url = '/spot/my_trades'
-            query_param = f'limit=1000&_from={self.start_date}&to={self.end_date}'
+            print(f'_from: {math.trunc(self.start_date)}, to: {math.trunc(self.end_date)}')
+            query_param = f'limit=1000&_from={math.trunc(self.start_date)}&to={math.trunc(self.end_date)}'
             sign_headers = self.gen_sign('GET', prefix + url, query_param)
             headers.update(sign_headers)
             r = requests.request('GET', host + prefix + url + "?" + query_param, headers=headers)
-
+            print(f'Gate_IO spot trades: {r.json()}')
             trades = ({
-                'Koinly Date': datetime.fromtimestamp(int(trade.get('create_time')), pytz.UTC).strftime('%Y-%m-%d %H:%M:%S'),
+                'Koinly Date': datetime.fromtimestamp(int(trade.get('create_time'))).strftime('%Y-%m-%d %H:%M:%S'),
                 'Pair': trade.get('currency_pair'),
                 'Side': trade.get('side'),
                 'Amount': trade.get('amount'),
