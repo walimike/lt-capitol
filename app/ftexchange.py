@@ -1,4 +1,6 @@
 import time
+import pytz
+from datetime import datetime
 import urllib.parse
 from typing import Optional, Dict, Any, List
 
@@ -6,7 +8,7 @@ from requests import Request, Session, Response
 import hmac
 from ciso8601 import parse_datetime
 
-from .csv_generator import create_timestamp
+from .csv_generator import create_timestamp, generate_csv_file
 
 
 class FtxClient:
@@ -49,7 +51,15 @@ class FtxClient:
         return self._get(f'spot/trades')
 
     def get_my_lending_history(self):
-        return self._get('spot_margin/history')
+        data =  self._get('spot_margin/history')
+        csv_header = ['Koinly Date', 'Coin', 'Size', 'Rate']
+        trades = ({
+                'Koinly Date': trade.get('time'),
+                'Coin': trade.get('coin'),
+                'Size': trade.get('size'),
+                'Rate': trade.get('rate')
+                } for trade in data)
+        generate_csv_file('capital_spot_trades', trades, csv_header)
 
     def get_withdrawals(self):
         pass

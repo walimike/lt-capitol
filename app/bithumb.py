@@ -3,10 +3,10 @@ from datetime import datetime as DateTime
 from hmac import digest
 import requests
 
-from .csv_generator import create_timestamp
+from .csv_generator import create_timestamp, generate_csv_file
 
 
-URL_WITHDRAW= 'https://global-openapi.bithumb.pro/openapi/v1/withdraw'
+URL_WITHDRAW = 'https://global-openapi.bithumb.pro/openapi/v1/wallet/withdrawHistory'
 URL         = 'https://global-openapi.bithumb.pro/openapi/v1/spot/'
 DEPTH_URL   = 'https://global-openapi.bithumb.pro/market/data/orderBook?symbol='
 CONFIG_URL  = 'https://global-openapi.bithumb.pro/market/data/config'
@@ -74,8 +74,8 @@ class BithumbGlobalRestAPI:
                             input_dict.get('end_date')
                         )
         self.__secret = Secret(
-            'd383d7cb0098e85d5a72198663232074',
-            '2e83ab567521a2ce00db3c9f013d3f1aed56739aba6d1ba262caaeaaaf5c490e'
+            input_dict.get('apikey'),
+            input_dict.get('apisecret')
         )
         self.__session = session = requests.session()
         session.headers.update({'content-Type': 'application/json'})
@@ -130,6 +130,11 @@ class BithumbGlobalRestAPI:
         data['signature'] = self.__secret.sign(data)
         response = self.session.post(url=MY_TRADES_URL, json=data, timeout=15)
         response = load_json(response.text)
+        if not response.get('data'):
+            raise BithumbGlobalError(response['code'], response['msg'])
+        else:
+            #generate csv here
+            data = response['data']
 
     def get_deposits(self):
         parms = {
@@ -143,12 +148,18 @@ class BithumbGlobalRestAPI:
         }
         data.update(parms)
         data['signature'] = self.__secret.sign(data)
-        print('the deposit data',data)
         response = self.session.post(url=DEPOSITS_URL, json=data, timeout=15)
         response = load_json(response.text)
-        print('-------deposits----------', response)
+        if not response.get('data'):
+            raise BithumbGlobalError(response['code'], response['msg'])
+        else:
+            #generate csv here
+            data = response['data']
+
 
     def withdraw(self, cointype, address, volume, mark='AUTO', memo=None):
+        if not self.start_date :
+            raise BithumbGlobalError(400, 'Start date is required')
         parms = {
             'coinType': cointype,
             'address': address,
@@ -164,14 +175,14 @@ class BithumbGlobalRestAPI:
              'bizCode': action,
              'msgNo': ts,
              'timestamp': ts,
+             'start': self.start_date
         }
         data.update(parms)
 
         data['signature'] = self.__secret.sign(data)
-        print('the withdrawal data',data)
         response = self.session.post(url=URL_WITHDRAW, json=data, timeout=15)
         response = load_json(response.text)
-        print('withdrawal data------------',response)
+        print('withdrawal data', response)
 
         if response['code'] != '0':
            raise BithumbGlobalError(response['code'], response['msg'])
