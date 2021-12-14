@@ -87,9 +87,12 @@ class GateIOApi():
 
 
     def get_deposits_and_withdrawals(self):
+        print(f'key: {self.key}')
+        print(f'secret: {self.secret}')
         deposits_and_withdrawals = []
         deposits_and_withdrawals.extend(list(self.get_withdrawals()))
         deposits_and_withdrawals.extend(list(self.get_deposits()))
+        print(f'deposits_and_withdrawals: {deposits_and_withdrawals}')
 
         csv_header = ['Koinly Date', 'Amount', 'Currency', 'Label', 'Description', 'TxHash']
         generate_csv_file('capital_deposits_and_withdrawals', deposits_and_withdrawals, csv_header)
@@ -98,18 +101,16 @@ class GateIOApi():
         try:
             # returns list[LedgerRecord]
             api_response = self.wallet_api_instance.list_withdrawals(limit=1000)
+            print(f'api_response withdraws: {api_response}')
             my_withdrawals = ({
-                #TODO: confirm if create_time is in seconds
                 'Koinly Date': datetime.fromtimestamp(int(withdraw.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
                 'Amount': withdraw.amount,
                 'Currency': withdraw.currency,
-                #TODO: confirm we're picking the right field
-                'Label': withdraw.memo,
+                'Label': '',
                 'Description': withdraw.memo,
                 'TxHash': withdraw.txid
                 } for withdraw in api_response)
             return my_withdrawals
-            # generate_csv_file('capital_withdrawals', withdrawls, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
@@ -119,18 +120,16 @@ class GateIOApi():
     def get_deposits(self):
         try:
             api_response = self.wallet_api_instance.list_deposits(limit=1000)
+            print(f'api_response deposits: {api_response}')
             my_deposits = ({
-                #TODO: confirm if create_time is in seconds
                 'Koinly Date': datetime.fromtimestamp(int(deposit.timestamp), pytz.UTC).strftime('%Y-%m-%d %H:%M'),
                 'Amount': deposit.amount,
                 'Currency': deposit.currency,
-                #TODO: confirm the field
                 'Label': '',
                 'Description': deposit.memo,
                 'TxHash': deposit.txid
                 } for deposit in api_response)
             return my_deposits
-            # generate_csv_file('capital_deposits',my_deposits, csv_header)
         except GateApiException as ex:
             print("Gate api exception, label: %s, message: %s\n" % (ex.label, ex.message))
         except ApiException as e:
