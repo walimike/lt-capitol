@@ -18,7 +18,6 @@ from .csv_generator import generate_csv_file
 
 class AscendexApi():
     def __init__(self, input_dict):
-        print(f'input_dict: {input_dict}')
         self.apikey = input_dict.get('apikey')
         self.apisecret = str(input_dict.get('apisecret'))
         self.api_action = input_dict.get('apiaction')
@@ -28,10 +27,10 @@ class AscendexApi():
     def initiate_request(self):
         if self.api_action == 'deposits':
             self.get_deposits_and_withdraws()
-        elif self.api_action == 'withdraws':
-            self.get_deposits_and_withdraws()
         elif self.api_action == 'spottrades':
             self.ascend_trades()
+        else:
+            raise Exception('This action is not available for Ascendex')
 
     def get_deposits_and_withdraws(self):
         DEPOSITS_WITHDRAWS_API_URL = "https://ascendex.com/api/pro/v1/wallet/transactions"
