@@ -36,15 +36,13 @@ class GateIOApi():
         self.initiate_request()
 
     def initiate_request(self):
-        #TODO one action for deposits and withdraws
         if self.api_action == 'deposits':
             self.get_deposits_and_withdrawals()
         elif self.api_action == 'spottrades':
             self.get_spot_trades()
-        elif self.api_action == 'withdrawals':
-            self.get_deposits_and_withdrawals()
         else:
-            pass
+            raise Exception('This action is not available for Gate IO')
+
 
     def gen_sign(self, method, url, query_string=None, payload_string=None):
         t = time.time()
